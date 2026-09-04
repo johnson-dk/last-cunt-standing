@@ -43,7 +43,7 @@ function competitionMeta(data: Record<string, unknown>): CompetitionMeta {
 export async function loadPool(
   userId: string | null,
 ): Promise<{ pool: PoolData; competitionId: string }> {
-  if (userId && db) {
+  if (userId) {
     const rootSnap = await getDoc(doc(db, 'pools', userId))
     const activeId: string | undefined = rootSnap.exists()
       ? (rootSnap.data().activeCompetitionId as string)
@@ -93,7 +93,7 @@ export async function savePool(
   competitionId: string,
   data: PoolData,
 ): Promise<void> {
-  if (userId && db) {
+  if (userId) {
     await setDoc(
       doc(db, 'pools', userId, 'competitions', competitionId),
       { settings: data.settings, players: data.players, picks: data.picks },
@@ -129,7 +129,7 @@ export async function createCompetition(
     picks: [],
   }
 
-  if (userId && db) {
+  if (userId) {
     await setDoc(doc(db, 'pools', userId, 'competitions', id), comp)
     await setDoc(doc(db, 'pools', userId), { activeCompetitionId: id }, { merge: true })
   } else {
@@ -140,7 +140,7 @@ export async function createCompetition(
 }
 
 export async function loadAllCompetitions(userId: string | null): Promise<CompetitionMeta[]> {
-  if (userId && db) {
+  if (userId) {
     const snap = await getDocs(collection(db, 'pools', userId, 'competitions'))
     return snap.docs
       .map((d) => competitionMeta(d.data() as Record<string, unknown>))
@@ -162,7 +162,7 @@ export async function loadCompetitionPool(
   userId: string | null,
   competitionId: string,
 ): Promise<PoolData | null> {
-  if (userId && db) {
+  if (userId) {
     const snap = await getDoc(doc(db, 'pools', userId, 'competitions', competitionId))
     if (!snap.exists()) return null
     const d = snap.data()

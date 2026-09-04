@@ -1,13 +1,9 @@
-import { auth } from '../lib/firebase'
-
 interface LoginScreenProps {
   onGoogle: () => void
   onLocal: () => void
 }
 
 export default function LoginScreen({ onGoogle, onLocal }: LoginScreenProps) {
-  const firebaseAvailable = auth !== null
-
   return (
     <div className="login-screen">
       <div className="login-card">
@@ -16,28 +12,19 @@ export default function LoginScreen({ onGoogle, onLocal }: LoginScreenProps) {
         <p className="login-card__subtitle">Premier League Survivor Pool</p>
 
         <div className="login-card__options">
-          {firebaseAvailable && (
-            <button className="btn btn--primary login-btn" onClick={onGoogle}>
-              <GoogleIcon />
-              Sign in with Google
-            </button>
-          )}
+          <button className="btn btn--primary login-btn" onClick={onGoogle}>
+            <GoogleIcon />
+            Sign in with Google
+          </button>
 
           <button className="btn btn--ghost login-btn" onClick={onLocal}>
             Continue locally
           </button>
         </div>
 
-        {firebaseAvailable && (
-          <p className="login-card__hint">
-            Sign in to sync your pool across devices. Local mode saves to this browser only.
-          </p>
-        )}
-        {!firebaseAvailable && (
-          <p className="login-card__hint">
-            Running in local mode — data is saved to this browser. Add Firebase credentials to enable cross-device sync.
-          </p>
-        )}
+        <p className="login-card__hint">
+          Sign in to sync your pool across devices. Local mode saves to this browser only.
+        </p>
       </div>
     </div>
   )

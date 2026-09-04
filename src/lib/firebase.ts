@@ -4,18 +4,14 @@ import { getFirestore } from 'firebase/firestore'
 import type { Auth } from 'firebase/auth'
 import type { Firestore } from 'firebase/firestore'
 
-export let auth: Auth | null = null
-export let db: Firestore | null = null
+const app = initializeApp({
+  apiKey: 'AIzaSyBjJBzCL85zsyavxVTI1OvbS21JSAMM7hY',
+  authDomain: 'last-cunt-standing.firebaseapp.com',
+  projectId: 'last-cunt-standing',
+  storageBucket: 'last-cunt-standing.firebasestorage.app',
+  messagingSenderId: '812638352592',
+  appId: '1:812638352592:web:175d6cee014c749a639ad5',
+})
 
-if (import.meta.env.VITE_FIREBASE_API_KEY) {
-  const app = initializeApp({
-    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-    appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  })
-  auth = getAuth(app)
-  db = getFirestore(app)
-}
+export const auth: Auth = getAuth(app)
+export const db: Firestore = getFirestore(app)
