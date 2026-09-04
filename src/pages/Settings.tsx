@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { useApp } from '../context/AppContext'
-import type { PoolData, PrizeEntry } from '../types'
+import type { DrawRule, PoolData, PrizeEntry } from '../types'
 import { auth } from '../lib/firebase'
+
+const DEFAULT_NEW_COMP_NAME = (existing: number) => `Season ${existing + 1}`
 
 const DEFAULT_POOL: PoolData = {
   settings: {
@@ -9,21 +11,43 @@ const DEFAULT_POOL: PoolData = {
     entryFee: 0,
     prizeStructure: [{ position: 1, percentage: 100, label: 'Winner' }],
     currentGameweek: 1,
+    drawRule: 'survive',
   },
   players: [],
   picks: [],
 }
 
 export default function Settings() {
-  const { pool, setPool } = useApp()
+  const { pool, setPool, createCompetition, currentFplGameweek } = useApp()
   const [local, setLocal] = useState<PoolData>(pool)
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [confirmClear, setConfirmClear] = useState(false)
+  const [showNewComp, setShowNewComp] = useState(false)
+  const [newCompName, setNewCompName] = useState('')
+  const [newCompGw, setNewCompGw] = useState(1)
+  const [creating, setCreating] = useState(false)
 
   const clearData = () => {
     setPool(DEFAULT_POOL)
     setLocal(DEFAULT_POOL)
     setConfirmClear(false)
+  }
+
+  const openNewComp = () => {
+    setNewCompName(DEFAULT_NEW_COMP_NAME(1))
+    setNewCompGw(currentFplGameweek ?? pool.settings.currentGameweek)
+    setShowNewComp(true)
+  }
+
+  const handleCreateCompetition = async () => {
+    if (!newCompName.trim()) return
+    setCreating(true)
+    try {
+      await createCompetition(newCompName.trim(), newCompGw)
+      setShowNewComp(false)
+    } finally {
+      setCreating(false)
+    }
   }
 
   const persist = (updated: PoolData) => {
@@ -95,29 +119,16 @@ export default function Settings() {
         </div>
 
         <div className="form-group">
-          <label htmlFor="current-gw">Current Gameweek</label>
-          <div className="stepper">
-            <button
-              className="btn btn--ghost"
-              onClick={() => updateSettings('currentGameweek', Math.max(1, local.settings.currentGameweek - 1))}
-            >
-              −
-            </button>
-            <input
-              id="current-gw"
-              type="number"
-              min={1}
-              max={38}
-              value={local.settings.currentGameweek}
-              onChange={(e) => updateSettings('currentGameweek', Number(e.target.value))}
-            />
-            <button
-              className="btn btn--ghost"
-              onClick={() => updateSettings('currentGameweek', Math.min(38, local.settings.currentGameweek + 1))}
-            >
-              +
-            </button>
-          </div>
+          <label htmlFor="draw-rule">Draw Rule</label>
+          <select
+            id="draw-rule"
+            value={local.settings.drawRule ?? 'survive'}
+            onChange={(e) => updateSettings('drawRule', e.target.value as DrawRule)}
+          >
+            <option value="survive">Survive — draw counts as a void, player continues</option>
+            <option value="loss">Loss — draw eliminates the player</option>
+            <option value="repick">Re-pick — draw is cleared, player picks again same week</option>
+          </select>
         </div>
       </div>
 
@@ -178,6 +189,16 @@ export default function Settings() {
           Total: {totalPct}%
         </div>
       </div>
+      <div className="card">
+        <h2 className="card__title">New Competition</h2>
+        <p className="danger-zone__desc">
+          Start a fresh run. All current players are copied over with their status reset to active and team bans cleared.
+        </p>
+        <button className="btn btn--primary" onClick={openNewComp}>
+          Start new competition
+        </button>
+      </div>
+
       <div className="card danger-zone">
         <h2 className="card__title">Danger Zone</h2>
         <p className="danger-zone__desc">Permanently delete all players, picks, and settings. This cannot be undone.</p>
@@ -185,6 +206,43 @@ export default function Settings() {
           Clear all data
         </button>
       </div>
+
+      {showNewComp && (
+        <div className="modal-backdrop" onClick={() => setShowNewComp(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal__header">
+              <h2 className="modal__title">Start New Competition</h2>
+              <button className="btn btn--ghost modal__close" onClick={() => setShowNewComp(false)}>✕</button>
+            </div>
+            <div className="form-group">
+              <label htmlFor="new-comp-name">Competition Name</label>
+              <input
+                id="new-comp-name"
+                type="text"
+                value={newCompName}
+                onChange={(e) => setNewCompName(e.target.value)}
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="new-comp-gw">Starting Gameweek</label>
+              <input
+                id="new-comp-gw"
+                type="number"
+                min={1}
+                max={38}
+                value={newCompGw}
+                onChange={(e) => setNewCompGw(Number(e.target.value))}
+              />
+            </div>
+            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+              <button className="btn btn--ghost" onClick={() => setShowNewComp(false)}>Cancel</button>
+              <button className="btn btn--primary" onClick={handleCreateCompetition} disabled={creating || !newCompName.trim()}>
+                {creating ? 'Creating…' : 'Create'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {confirmClear && (
         <div className="modal-backdrop" onClick={() => setConfirmClear(false)}>

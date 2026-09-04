@@ -2,12 +2,13 @@ import { useApp } from '../context/AppContext'
 import type { Player } from '../types'
 
 export default function History() {
-  const { pool } = useApp()
-  const { players, picks } = pool
+  const { pool, currentFplGameweek } = useApp()
+  const { players, picks, settings } = pool
 
-  const gameweeks = picks.length > 0
-    ? Array.from({ length: Math.max(...picks.map((p) => p.gameweek)) }, (_, i) => i + 1)
-    : []
+  const maxGw = picks.length > 0
+    ? Math.max(currentFplGameweek ?? settings.currentGameweek, Math.max(...picks.map((p) => p.gameweek)))
+    : 0
+  const gameweeks = maxGw > 0 ? Array.from({ length: maxGw }, (_, i) => i + 1) : []
 
   const activePlayers = players.filter((p) => p.status === 'active')
   const eliminatedPlayers = players

@@ -1,5 +1,6 @@
 export type PaymentStatus = 'paid' | 'unpaid' | 'pending'
 export type PlayerStatus = 'active' | 'eliminated'
+export type DrawRule = 'survive' | 'loss' | 'repick'
 
 export interface Player {
   id: string
@@ -28,12 +29,22 @@ export interface PoolSettings {
   entryFee: number
   prizeStructure: PrizeEntry[]
   currentGameweek: number
+  drawRule: DrawRule
 }
 
 export interface PoolData {
   settings: PoolSettings
   players: Player[]
   picks: Pick[]
+}
+
+export interface CompetitionMeta {
+  id: string
+  name: string
+  startGameweek: number
+  createdAt: number
+  playerCount: number
+  winner: string | null
 }
 
 export interface FPLTeam {

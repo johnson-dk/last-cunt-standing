@@ -1,0 +1,4 @@
+[
+  { "id": 1, "event": 3, "team_h": 1, "team_a": 6, "team_h_score": 2, "team_a_score": 0, "finished": true },
+  { "id": 2, "event": 3, "team_h": 12, "team_a": 14, "team_h_score": 1, "team_a_score": 1, "finished": true }
+]

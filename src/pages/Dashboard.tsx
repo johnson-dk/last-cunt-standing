@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useApp } from '../context/AppContext'
+import { weeksSurvived as calcWeeksSurvived } from '../lib/poolLogic'
 import type { Player } from '../types'
 import PlayerHistoryModal from '../components/PlayerHistoryModal'
 
@@ -16,9 +17,7 @@ export default function Dashboard() {
   const sorted: Player[] = [...activePlayers, ...eliminatedPlayers]
   const pot = players.length * settings.entryFee
 
-  const weeksSurvived = (player: Player): number => {
-    return picks.filter((pk) => pk.playerId === player.id).length
-  }
+  const weeksSurvived = (player: Player): number => calcWeeksSurvived(picks, player.id)
 
   const lastPick = (player: Player): string => {
     const playerPicks = picks

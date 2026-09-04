@@ -1,5 +1,38 @@
 import type { FPLTeam, FPLFixture } from '../types'
 
+interface FPLEvent {
+  id: number
+  deadline_time: string
+  is_current: boolean
+  is_next: boolean
+}
+
+export async function fetchCurrentGameweek(): Promise<{ gameweek: number | null; deadlineTime: string | null }> {
+  const res = await fetch('/fpl-api/bootstrap-static/')
+  if (!res.ok) return { gameweek: null, deadlineTime: null }
+  const contentType = res.headers.get('content-type') ?? ''
+  if (!contentType.includes('application/json')) return { gameweek: null, deadlineTime: null }
+  const data = await res.json()
+  const events = data.events as FPLEvent[]
+  const current = events.find((e) => e.is_current)
+  const next = events.find((e) => e.is_next)
+
+  const now = Date.now()
+  const currentDeadlinePassed =
+    !current || new Date(current.deadline_time).getTime() < now
+
+  // Once the current GW deadline has passed, we're in the lead-up to the next GW
+  const gameweek = currentDeadlinePassed
+    ? (next?.id ?? current?.id ?? null)
+    : (current?.id ?? next?.id ?? null)
+
+  const deadlineTime = currentDeadlinePassed
+    ? (next?.deadline_time ?? null)
+    : current!.deadline_time
+
+  return { gameweek, deadlineTime }
+}
+
 export async function fetchTeams(): Promise<FPLTeam[]> {
   const res = await fetch('/fpl-api/bootstrap-static/')
   if (!res.ok) {

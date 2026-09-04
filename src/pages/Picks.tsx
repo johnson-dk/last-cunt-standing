@@ -1,13 +1,34 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useApp } from '../context/AppContext'
 import { fetchFixtures, getTeamResults } from '../lib/fpl'
+import { applyResults } from '../lib/poolLogic'
+import { useCountdown, formatDeadline } from '../hooks/useCountdown'
 import type { Pick, Player } from '../types'
 
 export default function Picks() {
-  const { pool, setPool, teams } = useApp()
+  const { pool, setPool, teams, currentFplGameweek, deadlineTime } = useApp()
+  const countdown = useCountdown(deadlineTime)
   const [gameweek, setGameweek] = useState(pool.settings.currentGameweek)
+  const didInitGw = useRef(false)
+
+  useEffect(() => {
+    if (currentFplGameweek !== null && !didInitGw.current) {
+      didInitGw.current = true
+      setGameweek(currentFplGameweek)
+    }
+  }, [currentFplGameweek])
   const [processing, setProcessing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const isFutureWeek = currentFplGameweek !== null && gameweek > currentFplGameweek
+  const isAlreadyProcessed = pool.picks.some((pk) => pk.gameweek === gameweek && pk.result !== undefined)
+  // Picks are locked for past weeks (deadline already passed) and for the current
+  // GW once its deadline has passed (countdown.passed) - prevents last-minute changes
+  const isClosed =
+    currentFplGameweek !== null &&
+    (gameweek < currentFplGameweek ||
+      (gameweek === currentFplGameweek && countdown.passed))
+  const canProcess = !processing && !isFutureWeek && !isAlreadyProcessed
 
   const activePlayers = pool.players.filter((p) => p.status === 'active')
 
@@ -47,14 +68,8 @@ export default function Picks() {
     try {
       const fixtures = await fetchFixtures(gameweek)
       const results = getTeamResults(fixtures)
-
-      const updatedPicks = pool.picks.map((pk) => {
-        if (pk.gameweek !== gameweek) return pk
-        const outcome = results.get(pk.teamId)
-        if (outcome === null || outcome === undefined) return pk
-        const result: Pick['result'] = outcome === 'win' ? 'win' : outcome === 'draw' ? 'void' : 'loss'
-        return { ...pk, result }
-      })
+      const drawRule = pool.settings.drawRule ?? 'survive'
+      const updatedPicks = applyResults(pool.picks, gameweek, results, drawRule)
 
       const updatedPlayers = pool.players.map((player) => {
         const pick = updatedPicks.find(
@@ -88,7 +103,18 @@ export default function Picks() {
         >
           ←
         </button>
-        <h2>Gameweek {gameweek}</h2>
+        <div className="gw-select-group">
+          <span className="gw-select-label">GW</span>
+          <select
+            className="gw-select"
+            value={gameweek}
+            onChange={(e) => setGameweek(Number(e.target.value))}
+          >
+            {Array.from({ length: 38 }, (_, i) => i + 1).map((gw) => (
+              <option key={gw} value={gw}>{gw}</option>
+            ))}
+          </select>
+        </div>
         <button
           className="btn btn--ghost"
           onClick={() => setGameweek((gw) => Math.min(38, gw + 1))}
@@ -99,11 +125,32 @@ export default function Picks() {
         <button
           className="btn btn--primary"
           onClick={processResults}
-          disabled={processing}
+          disabled={!canProcess}
         >
-          {processing ? 'Processing…' : 'Process Results'}
+          {processing ? 'Processing…' : isFutureWeek ? 'Future week' : isAlreadyProcessed ? 'Already processed' : 'Process Results'}
         </button>
       </div>
+
+      {gameweek === currentFplGameweek && (
+        isClosed ? (
+          <div className="deadline-banner deadline-banner--passed">
+            <span className="deadline-banner__label">Deadline passed — picks locked</span>
+          </div>
+        ) : deadlineTime ? (
+          <div className={`deadline-banner deadline-banner--${countdown.urgency}`}>
+            <span className="deadline-banner__label">
+              Pick deadline: {formatDeadline(deadlineTime)}
+            </span>
+            <span className="deadline-banner__countdown">
+              {countdown.fullLabel}
+            </span>
+          </div>
+        ) : (
+          <div className="deadline-banner deadline-banner--normal">
+            <span className="deadline-banner__label">Open for picks — deadline TBC</span>
+          </div>
+        )
+      )}
 
       {error && <div className="error-banner">{error}</div>}
 
@@ -136,6 +183,7 @@ export default function Picks() {
                       <select
                         value={pick?.teamId ?? ''}
                         onChange={(e) => updatePick(player, Number(e.target.value))}
+                        disabled={isClosed}
                       >
                         <option value="">— Select team —</option>
                         {teams.map((team) => (
