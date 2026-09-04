@@ -21,6 +21,9 @@ importers:
         specifier: ^7.18.3
         version: 7.18.3(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
     devDependencies:
+      '@cloudflare/workers-types':
+        specifier: ^5.20260904.1
+        version: 5.20260904.1
       '@types/react':
         specifier: ^19.2.18
         version: 19.2.18
@@ -44,6 +47,9 @@ importers:
         version: 8.2.2(@types/node@26.4.1)
 
 packages:
+
+  '@cloudflare/workers-types@5.20260904.1':
+    resolution: {integrity: sha512-SbulPvrdb4j5iISDr81Iw+YpNCG4Bb6xRqV3arkgn/Ib6STMaoG63lhPnuWqmZdakOn0qS1OUudBMdxtBFx0Jg==}
 
   '@firebase/ai@2.15.0':
     resolution: {integrity: sha512-Aj7TbFdAIWZdkX8JfdDStERpR35g6WNs+7XhNPtFLFOizUotj6k4N/D8HJkR45165HhnMJBe4hjOeeaxnnn56Q==}
@@ -1150,6 +1156,8 @@ packages:
     engines: {node: '>=12'}
 
 snapshots:
+
+  '@cloudflare/workers-types@5.20260904.1': {}
 
   '@firebase/ai@2.15.0(@firebase/app-types@0.9.6)(@firebase/app@0.16.1)':
     dependencies:
