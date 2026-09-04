@@ -2,13 +2,6 @@ import { useState } from 'react'
 import { useApp } from '../context/AppContext'
 import type { PaymentStatus, Player } from '../types'
 
-const PAYMENT_CYCLE: PaymentStatus[] = ['unpaid', 'pending', 'paid']
-
-function nextPayment(status: PaymentStatus): PaymentStatus {
-  const idx = PAYMENT_CYCLE.indexOf(status)
-  return PAYMENT_CYCLE[(idx + 1) % PAYMENT_CYCLE.length]
-}
-
 export default function Players() {
   const { pool, setPool } = useApp()
   const [newName, setNewName] = useState('')
@@ -55,12 +48,10 @@ export default function Players() {
     setEditingId(null)
   }
 
-  const cyclePayment = (player: Player) => {
+  const setPayment = (player: Player, paymentStatus: PaymentStatus) => {
     setPool({
       ...pool,
-      players: pool.players.map((p) =>
-        p.id === player.id ? { ...p, paymentStatus: nextPayment(p.paymentStatus) } : p,
-      ),
+      players: pool.players.map((p) => (p.id === player.id ? { ...p, paymentStatus } : p)),
     })
   }
 
@@ -135,13 +126,15 @@ export default function Players() {
                   )}
                 </td>
                 <td>
-                  <button
-                    className={`badge badge--${player.paymentStatus}`}
-                    onClick={() => cyclePayment(player)}
-                    title="Click to cycle payment status"
+                  <select
+                    value={player.paymentStatus}
+                    onChange={(e) => setPayment(player, e.target.value as PaymentStatus)}
+                    className={`payment-select payment-select--${player.paymentStatus}`}
                   >
-                    {player.paymentStatus}
-                  </button>
+                    <option value="unpaid">Unpaid</option>
+                    <option value="pending">Pending</option>
+                    <option value="paid">Paid</option>
+                  </select>
                 </td>
                 <td>
                   <span className={`badge badge--${player.status}`}>{player.status}</span>

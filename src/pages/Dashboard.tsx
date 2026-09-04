@@ -1,9 +1,12 @@
+import { useState } from 'react'
 import { useApp } from '../context/AppContext'
 import type { Player } from '../types'
+import PlayerHistoryModal from '../components/PlayerHistoryModal'
 
 export default function Dashboard() {
   const { pool } = useApp()
   const { players, picks, settings } = pool
+  const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null)
 
   const activePlayers = players.filter((p) => p.status === 'active')
   const eliminatedPlayers = players
@@ -49,7 +52,7 @@ export default function Dashboard() {
               <th>Status</th>
               <th>Weeks Survived</th>
               <th>Last Pick</th>
-              <th>Eliminated GW</th>
+              <th>Eliminated Gameweek</th>
             </tr>
           </thead>
           <tbody>
@@ -62,7 +65,11 @@ export default function Dashboard() {
             )}
             {sorted.map((player) => (
               <tr key={player.id}>
-                <td>{player.name}</td>
+                <td>
+                  <button className="player-name-btn" onClick={() => setSelectedPlayer(player)}>
+                    {player.name}
+                  </button>
+                </td>
                 <td>
                   <span className={`badge badge--${player.status}`}>{player.status}</span>
                 </td>
@@ -74,6 +81,13 @@ export default function Dashboard() {
           </tbody>
         </table>
       </div>
+      {selectedPlayer && (
+        <PlayerHistoryModal
+          player={selectedPlayer}
+          picks={picks}
+          onClose={() => setSelectedPlayer(null)}
+        />
+      )}
     </div>
   )
 }

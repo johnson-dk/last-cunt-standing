@@ -1,11 +1,30 @@
 import { useEffect, useRef, useState } from 'react'
 import { useApp } from '../context/AppContext'
 import type { PoolData, PrizeEntry } from '../types'
+import { auth } from '../lib/firebase'
+
+const DEFAULT_POOL: PoolData = {
+  settings: {
+    name: 'Last Man Standing',
+    entryFee: 0,
+    prizeStructure: [{ position: 1, percentage: 100, label: 'Winner' }],
+    currentGameweek: 1,
+  },
+  players: [],
+  picks: [],
+}
 
 export default function Settings() {
   const { pool, setPool } = useApp()
   const [local, setLocal] = useState<PoolData>(pool)
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [confirmClear, setConfirmClear] = useState(false)
+
+  const clearData = () => {
+    setPool(DEFAULT_POOL)
+    setLocal(DEFAULT_POOL)
+    setConfirmClear(false)
+  }
 
   const persist = (updated: PoolData) => {
     setLocal(updated)
@@ -159,6 +178,34 @@ export default function Settings() {
           Total: {totalPct}%
         </div>
       </div>
+      <div className="card danger-zone">
+        <h2 className="card__title">Danger Zone</h2>
+        <p className="danger-zone__desc">Permanently delete all players, picks, and settings. This cannot be undone.</p>
+        <button className="btn btn--danger" onClick={() => setConfirmClear(true)}>
+          Clear all data
+        </button>
+      </div>
+
+      {confirmClear && (
+        <div className="modal-backdrop" onClick={() => setConfirmClear(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal__header">
+              <h2 className="modal__title">Clear all data?</h2>
+              <button className="btn btn--ghost modal__close" onClick={() => setConfirmClear(false)}>✕</button>
+            </div>
+            <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem', marginBottom: '1.25rem' }}>
+              This will delete all players, picks, and reset settings to defaults. There is no undo.
+              {auth?.currentUser
+                ? ' Data will be cleared from both this browser and your Google account (Firebase).'
+                : ' Data will be cleared from this browser only.'}
+            </p>
+            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+              <button className="btn btn--ghost" onClick={() => setConfirmClear(false)}>Cancel</button>
+              <button className="btn btn--danger" onClick={clearData}>Yes, clear everything</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

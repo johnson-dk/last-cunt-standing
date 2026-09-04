@@ -16,6 +16,7 @@ interface AppContextValue {
   loading: boolean
   login: () => void
   logout: () => void
+  resetMode: () => void
 }
 
 const AppContext = createContext<AppContextValue | null>(null)
@@ -36,6 +37,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const handleGoogle = () => {
     login()
+  }
+
+  const resetMode = () => {
+    localStorage.removeItem(MODE_KEY)
+    logout()
+    setModeChosen(false)
   }
 
   useEffect(() => {
@@ -86,7 +93,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AppContext.Provider value={{ pool, setPool, userId, teams, loading, login, logout }}>
+    <AppContext.Provider value={{ pool, setPool, userId, teams, loading, login, logout, resetMode }}>
       {children}
     </AppContext.Provider>
   )
