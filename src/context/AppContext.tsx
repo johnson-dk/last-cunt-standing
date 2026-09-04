@@ -76,7 +76,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     fetchTeams()
       .then(setTeams)
-      .catch(() => {})
+      .catch((err) => console.error('[AppContext] fetchTeams error:', err))
   }, [])
 
   const setPool = (data: PoolData) => {

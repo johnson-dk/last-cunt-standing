@@ -2,14 +2,34 @@ import type { FPLTeam, FPLFixture } from '../types'
 
 export async function fetchTeams(): Promise<FPLTeam[]> {
   const res = await fetch('/fpl-api/bootstrap-static/')
-  if (!res.ok) throw new Error('Failed to fetch FPL teams')
+  if (!res.ok) {
+    const errorBody = await res.text().catch(() => '')
+    console.error(`[FPL] fetchTeams failed: HTTP ${res.status}`, errorBody)
+    throw new Error(`Failed to fetch FPL teams: HTTP ${res.status}`)
+  }
+  const contentType = res.headers.get('content-type') ?? ''
+  if (!contentType.includes('application/json')) {
+    const errorBody = await res.text().catch(() => '')
+    console.error('[FPL] fetchTeams returned non-JSON response:', errorBody.slice(0, 300))
+    throw new Error('FPL API returned non-JSON response (possibly index.html)')
+  }
   const data = await res.json()
   return data.teams as FPLTeam[]
 }
 
 export async function fetchFixtures(gameweek: number): Promise<FPLFixture[]> {
   const res = await fetch(`/fpl-api/fixtures/?event=${gameweek}`)
-  if (!res.ok) throw new Error('Failed to fetch fixtures')
+  if (!res.ok) {
+    const errorBody = await res.text().catch(() => '')
+    console.error(`[FPL] fetchFixtures failed: HTTP ${res.status}`, errorBody)
+    throw new Error(`Failed to fetch fixtures: HTTP ${res.status}`)
+  }
+  const contentType = res.headers.get('content-type') ?? ''
+  if (!contentType.includes('application/json')) {
+    const errorBody = await res.text().catch(() => '')
+    console.error('[FPL] fetchFixtures returned non-JSON response:', errorBody.slice(0, 300))
+    throw new Error('FPL API returned non-JSON response (possibly index.html)')
+  }
   const data: FPLFixture[] = await res.json()
   return data
 }
